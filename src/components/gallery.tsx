@@ -163,7 +163,7 @@ export function Gallery() {
       </div>
 
       {selectedImage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={closeLightbox}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/30" onClick={closeLightbox}>
           <Button
             variant="destructive"
             size="icon"
