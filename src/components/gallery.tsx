@@ -138,19 +138,32 @@ export function Gallery() {
   const downloadImage = async () => {
     if (!selectedImage) return
     try {
-      const response = await fetch(selectedImage.url)
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `poland-trip-${selectedImage.caption || 'photo'}.jpg`
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
+      // Check if running on mobile using navigator.share availability
+      if (navigator.share && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+        const response = await fetch(selectedImage.url)
+        const blob = await response.blob()
+        const file = new File([blob], `poland-trip-${selectedImage.caption || 'photo'}.jpg`, { type: 'image/jpeg' })
+        
+        await navigator.share({
+          files: [file],
+          title: selectedImage.caption || 'Poland Trip Photo',
+        })
+      } else {
+        // Desktop fallback - download as file
+        const response = await fetch(selectedImage.url)
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `poland-trip-${selectedImage.caption || 'photo'}.jpg`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+      }
     } catch (error) {
-      console.error('Error downloading image:', error)
-      alert('Failed to download image. Please try again.')
+      console.error('Error handling image:', error)
+      alert('Failed to save/download image. Please try again.')
     }
   }
 
