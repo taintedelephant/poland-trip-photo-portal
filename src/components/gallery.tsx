@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Cross2Icon } from "@radix-ui/react-icons"
+import { Cross2Icon, TrashIcon } from "@radix-ui/react-icons"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { supabase } from "@/lib/supabase"
@@ -61,6 +61,38 @@ export function Gallery() {
   const closeLightbox = () => {
     setSelectedImage(null)
     document.body.style.overflow = "auto"
+  }
+
+  const deleteImage = async (image: ImageType) => {
+    if (!confirm('Are you sure you want to delete this image?')) return
+
+    try {
+      // Extract filename from URL
+      const urlParts = image.url.split('/')
+      const filename = urlParts[urlParts.length - 1]
+
+      // Delete from Storage
+      const { error: storageError } = await supabase.storage
+        .from('poland-photos')
+        .remove([filename])
+
+      if (storageError) throw storageError
+
+      // Delete from Database
+      const { error: dbError } = await supabase
+        .from('images')
+        .delete()
+        .eq('id', image.id)
+
+      if (dbError) throw dbError
+
+      // Update UI
+      setImages(images.filter(img => img.id !== image.id))
+      closeLightbox()
+    } catch (error) {
+      console.error('Error deleting image:', error)
+      alert('Failed to delete image. Please try again.')
+    }
   }
 
   const ImageComponent = ({ src, alt, className, isLightbox = false }: { src: string; alt: string; className?: string; isLightbox?: boolean }) => {
@@ -126,14 +158,24 @@ export function Gallery() {
       {selectedImage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80" onClick={closeLightbox}>
           <div className="relative max-w-4xl max-h-[90vh] w-full mx-4" onClick={(e) => e.stopPropagation()}>
-            <Button
-              variant="outline"
-              size="icon"
-              className="absolute z-10 bg-black/50 hover:bg-black/70 top-2 right-2"
-              onClick={closeLightbox}
-            >
-              <Cross2Icon className="w-5 h-5" />
-            </Button>
+            <div className="absolute z-10 flex gap-2 top-2 right-2">
+              <Button
+                variant="destructive"
+                size="icon"
+                className="bg-red-500/50 hover:bg-red-500/70"
+                onClick={() => deleteImage(selectedImage)}
+              >
+                <TrashIcon className="w-5 h-5" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="bg-black/50 hover:bg-black/70"
+                onClick={closeLightbox}
+              >
+                <Cross2Icon className="w-5 h-5" />
+              </Button>
+            </div>
             <div className="overflow-hidden bg-slate-950 rounded-lg">
               <div className="relative aspect-video">
                 <ImageComponent
