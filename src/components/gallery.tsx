@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Cross2Icon } from "@radix-ui/react-icons"
+import { Cross2Icon, TrashIcon } from "@radix-ui/react-icons"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { supabase } from "@/lib/supabase"
@@ -165,29 +165,27 @@ export function Gallery() {
       {selectedImage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={closeLightbox}>
           <div className="relative w-full h-full" onClick={(e) => e.stopPropagation()}>
-            <div className="absolute z-10 flex gap-2 top-4 right-4">
-              <Button
-                variant="destructive"
-                size="icon"
-                className="bg-red-500/50 hover:bg-red-500/70"
-                onClick={() => deleteImage(selectedImage)}
-                disabled={isDeleting}
-              >
-                {isDeleting ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                ) : (
-                  <Cross2Icon className="w-5 h-5" />
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                className="bg-black/50 hover:bg-black/70"
-                onClick={closeLightbox}
-              >
-                <Cross2Icon className="w-5 h-5" />
-              </Button>
-            </div>
+            <Button
+              variant="destructive"
+              size="icon"
+              className="absolute z-10 top-4 left-4 bg-red-500/50 hover:bg-red-500/70"
+              onClick={() => deleteImage(selectedImage)}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                <TrashIcon className="w-5 h-5" />
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="absolute z-10 top-4 right-4 bg-black/50 hover:bg-black/70"
+              onClick={closeLightbox}
+            >
+              <Cross2Icon className="w-5 h-5" />
+            </Button>
             <div className="w-full h-full">
               <div className="relative w-full h-full">
                 <ImageComponent
