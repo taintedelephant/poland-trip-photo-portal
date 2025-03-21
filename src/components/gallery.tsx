@@ -163,9 +163,9 @@ export function Gallery() {
       </div>
 
       {selectedImage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80" onClick={closeLightbox}>
-          <div className="relative max-w-4xl max-h-[90vh] w-full mx-4" onClick={(e) => e.stopPropagation()}>
-            <div className="absolute z-10 flex gap-2 top-2 right-2">
+        <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={closeLightbox}>
+          <div className="relative w-full h-full" onClick={(e) => e.stopPropagation()}>
+            <div className="absolute z-10 flex gap-2 top-4 right-4">
               <Button
                 variant="destructive"
                 size="icon"
@@ -188,8 +188,8 @@ export function Gallery() {
                 <Cross2Icon className="w-5 h-5" />
               </Button>
             </div>
-            <div className="overflow-hidden bg-slate-950 rounded-lg">
-              <div className="relative aspect-video">
+            <div className="w-full h-full">
+              <div className="relative w-full h-full">
                 <ImageComponent
                   src={selectedImage.url}
                   alt={selectedImage.caption}
@@ -197,9 +197,11 @@ export function Gallery() {
                   className="object-contain"
                 />
               </div>
-              <div className="p-4 text-center text-white">
-                <p className="text-lg font-medium">{selectedImage.caption}</p>
-              </div>
+              {selectedImage.caption && (
+                <div className="absolute bottom-0 left-0 right-0 p-4 text-center text-white bg-black/50 backdrop-blur-sm">
+                  <p className="text-lg font-medium">{selectedImage.caption}</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
