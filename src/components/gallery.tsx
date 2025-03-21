@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { TrashIcon } from "@radix-ui/react-icons"
+import { TrashIcon, Pencil1Icon, DownloadIcon } from "@radix-ui/react-icons"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { supabase } from "@/lib/supabase"
@@ -18,6 +18,8 @@ export function Gallery() {
   const [selectedImage, setSelectedImage] = useState<ImageType | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editedCaption, setEditedCaption] = useState("")
 
   useEffect(() => {
     fetchImages()
@@ -102,6 +104,56 @@ export function Gallery() {
     }
   }
 
+  const saveCaption = async () => {
+    if (!selectedImage) return
+    try {
+      const { error } = await supabase
+        .from('images')
+        .update({ caption: editedCaption })
+        .eq('id', selectedImage.id)
+
+      if (error) throw error
+
+      // Update local state
+      setImages(images.map(img => 
+        img.id === selectedImage.id 
+          ? { ...img, caption: editedCaption }
+          : img
+      ))
+      setSelectedImage(prev => prev ? { ...prev, caption: editedCaption } : null)
+      setIsEditing(false)
+    } catch (error) {
+      console.error('Error updating caption:', error)
+      alert('Failed to update caption. Please try again.')
+    }
+  }
+
+  const startEditing = () => {
+    if (selectedImage) {
+      setEditedCaption(selectedImage.caption)
+      setIsEditing(true)
+    }
+  }
+
+  const downloadImage = async () => {
+    if (!selectedImage) return
+    try {
+      const response = await fetch(selectedImage.url)
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `poland-trip-${selectedImage.caption || 'photo'}.jpg`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (error) {
+      console.error('Error downloading image:', error)
+      alert('Failed to download image. Please try again.')
+    }
+  }
+
   const ImageComponent = ({ src, alt, className, isLightbox = false }: { src: string; alt: string; className?: string; isLightbox?: boolean }) => {
     // Check if the source is a base64 image
     const isBase64 = src.startsWith('data:image')
@@ -164,26 +216,36 @@ export function Gallery() {
 
       {selectedImage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/30" onClick={closeLightbox}>
-          <Button
-            variant="destructive"
-            size="icon"
-            className="absolute z-10 top-4 left-4 bg-red-500/50 hover:bg-red-500/70"
-            onClick={(e) => {
-              e.stopPropagation()
-              deleteImage(selectedImage)
-            }}
-            disabled={isDeleting}
-          >
-            {isDeleting ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            ) : (
-              <TrashIcon className="w-5 h-5" />
-            )}
-          </Button>
           <div 
             className="relative"
             onClick={(e) => e.stopPropagation()}
           >
+            <div className="absolute z-10 flex items-center gap-2 top-4 left-4">
+              <Button
+                variant="destructive"
+                size="icon"
+                className="bg-red-500/50 hover:bg-red-500/70"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  deleteImage(selectedImage)
+                }}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <TrashIcon className="w-5 h-5" />
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                className="bg-black/50 hover:bg-black/70 text-white"
+                onClick={downloadImage}
+              >
+                <DownloadIcon className="w-5 h-5 mr-2" />
+                Save to Photos
+              </Button>
+            </div>
             <div className="relative" style={{ width: '80vw', height: '80vh' }}>
               <ImageComponent
                 src={selectedImage.url}
@@ -192,10 +254,40 @@ export function Gallery() {
                 className="object-contain"
               />
             </div>
-            {selectedImage.caption && (
-              <div className="absolute bottom-0 left-0 right-0 p-4 text-center text-white bg-black/50 backdrop-blur-sm">
-                <p className="text-lg font-medium">{selectedImage.caption}</p>
+            {isEditing ? (
+              <div className="absolute bottom-0 left-0 right-0 p-4 bg-black/50 backdrop-blur-sm">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={editedCaption}
+                    onChange={(e) => setEditedCaption(e.target.value)}
+                    className="flex-1 px-3 py-2 bg-transparent border rounded-md text-white border-white/30 focus:outline-none focus:border-white"
+                    placeholder="Enter new caption"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') saveCaption()
+                      if (e.key === 'Escape') setIsEditing(false)
+                    }}
+                  />
+                  <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
+                  <Button onClick={saveCaption}>Save</Button>
+                </div>
               </div>
+            ) : (
+              selectedImage.caption && (
+                <div className="absolute bottom-0 left-0 right-0 p-4 text-center text-white bg-black/50 backdrop-blur-sm">
+                  <div className="flex items-center justify-center gap-2">
+                    <p className="text-lg font-medium">{selectedImage.caption}</p>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="hover:bg-white/10"
+                      onClick={startEditing}
+                    >
+                      <Pencil1Icon className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              )
             )}
           </div>
         </div>
